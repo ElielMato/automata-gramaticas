@@ -16,4 +16,4 @@ def solve(string):
     return result
                 
 
-print(solve("5*5*10"))   
+print(solve("1+1+1*1*1+1"))   
