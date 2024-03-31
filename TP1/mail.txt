@@ -1,4 +1,5 @@
-hola3_4ggAA@gmail.com.ar
-holasa3_443A@gmail.com.ar
-hola5453_4AA@gmail.com.ar
-hola3_4AA@gmail.com.ara
+example1@gmail.com
+user123@yahoo.com
+testmail@hotmail.com
+info@company.com
+john.doe@example.com
