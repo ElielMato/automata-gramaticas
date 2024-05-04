@@ -4,8 +4,6 @@ import time
 import csv
 from dataclasses import dataclass
 
-# Creamos clase DTO que representa una fila.
-# Ver https://realpython.com/python-data-classes
 @dataclass
 class MovieDto:
     title: str
@@ -24,13 +22,9 @@ class MovieDto:
 def parse_csv() -> list:
     movies = []
     try:
-        # Abrir el archivo csv usando path relativo desde este archivo Python
         with open(f"{pathlib.Path(__file__).parent.absolute()}/movies.csv", 'r', encoding='utf-8') as file:
-            # Usamos csv.DictReader que permite leer el archivo y parsear cada fila a un diccionario Python.
-            # ver https://realpython.com/python-csv/
             csv_reader = csv.DictReader(file, delimiter=',')
             for row in csv_reader:
-            # Parseamos cada row a la clase DTO. Lo agregamos a la lista
                 movie = MovieDto(
                     row['Title'],
                     row['Year'],
@@ -304,6 +298,5 @@ def menu():
         menu()
 
 if __name__ == '__main__':
-    # Obtenemos lista de películas como una lista de DTOs
     movies = parse_csv()
     menu()
