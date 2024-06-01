@@ -52,18 +52,69 @@ def parse_csv() -> list:
         print("File not found")
         exit(1)
 
+def research(callback):
+    search = input("Quieres realizar una nueva busqueda o acción (si/no): ").lower()
+    if search == "si":
+        callback()
+    elif search == "no":
+        print("Volviendo al menu...")
+        time.sleep(1)
+        menu()
+        return
+    else:
+        print("Opción no válida, intenta nuevamente")
+        time.sleep(1)
+        research(callback)
+
+def menu():
+    songs = parse_csv()
+    print("Bienvenido al buscador de canciones🎶")
+    print("1. Buscar canciones por titulo o artista")
+    print("2. Buscar canciones más populares de un artista")
+    print("3. Insertar canciones")
+    print("4. Buscar albumes y sus canciones por artista")
+    print("5. Salir")
+    option = input("Introduce el número de la opción que deseas: ")
+    if option == "1":
+        search_songs(songs)
+    elif option == "2":
+        top_songs_by_artist(songs)
+    elif option == "3":
+        pass
+        #Formula para agregar canciones 
+    elif option == "4":
+        pass
+        #Formula para buscar albumes y sus canciones por artista
+    elif option == "5":
+        print("Saliendo...")
+        time.sleep(1)
+        return
+    else:
+        print("Opción no válida, intenta nuevamente")
+        time.sleep(1)
+        menu()
+
+if __name__ == '__main__':
+    # Obtenemos lista de películas como una lista de DTOs
+    songs = parse_csv()
+    menu()
+
 # Función para buscar canciones por nombre de canción o artista
 def search_songs(songs):
     search_text = input("Introduce el nombre de la canción o artista: ").lower()
     matching_songs = [song for song in songs if search_text in song.track.lower() or search_text in song.artist.lower()]
     if not matching_songs:
         print("No se encontraron canciones que coincidan con tu búsqueda")
+        time.sleep(1)
+        search_songs(songs)
         return
     matching_songs.sort(key=lambda song: int(float(song.views)), reverse=True)
 
     results = [(song.artist, song.track, ms_to_time(int(float(song.duration_ms)))) for song in matching_songs]
     for artist, track, duration in results:
         print(f"Artista: {artist}, Canción: {track}, Duración: {duration}")
+    
+    research(search_songs(songs))
 
 # Función para buscar las diez canciones más populares de un artista
 def top_songs_by_artist(songs):
@@ -71,6 +122,8 @@ def top_songs_by_artist(songs):
     artist_songs = [song for song in songs if song.artist.lower() == artist.lower()]
     if not artist_songs:
         print("No se encontraron canciones de ese artista")
+        time.sleep(1)
+        top_songs_by_artist(songs)
         return
     top_songs = sorted(artist_songs, key=lambda song: int(float(song.views)), reverse=True)[:10]
 
@@ -81,8 +134,7 @@ def top_songs_by_artist(songs):
         views = round(int(float(song.views)) / 1000000)
         print(f"Artista: {artist}, Canción: {track}, Duración: {duration}, Reproducciones: {views} millones")
 
-# Llamar a la función con el artista deseado
-top_songs_by_artist(parse_csv())
+    research(top_songs_by_artist(songs))
     
 # def searchMovie_name():
 #     name = input("Introduce el nombre de la plataforma o inicial de la misma: ")
@@ -314,33 +366,3 @@ top_songs_by_artist(parse_csv())
 
 #     research()
 
-# def menu():
-#     movies = parse_csv()
-#     print("Bienvenido al buscador de películas")
-#     print("1. Buscar película por nombre")
-#     print("2. Buscar película por plataforma")
-#     print("3. Buscar película por audiencia")
-#     print("4. Insertar pelicula")
-#     print("5. Salir")
-#     option = input("Introduce el número de la opción que deseas: ")
-#     if option == "1":
-#         searchMovie_name()
-#     elif option == "2":
-#         searchmovie_by_platform(movies)
-#     elif option == "3":
-#         searchmovie_by_age(movies)  
-#     elif option == "4":
-#         add_movie(movies)
-#     elif option == "5":
-#         print("Saliendo...")
-#         time.sleep(1)
-#         return
-#     else:
-#         print("Opción no válida, intenta nuevamente")
-#         time.sleep(1)
-#         menu()
-
-# if __name__ == '__main__':
-#     # Obtenemos lista de películas como una lista de DTOs
-#     movies = parse_csv()
-#     menu()
