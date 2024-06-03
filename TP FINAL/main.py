@@ -2,6 +2,8 @@ import pathlib
 import datetime
 import time
 import csv
+import re
+import pandas as pd
 from dataclasses import dataclass
 
 # Función para convertir milisegundos de la reproducción a formato de tiempo HH:MM:SS
@@ -52,27 +54,48 @@ def parse_csv() -> list:
         print("File not found")
         exit(1)
 
+def research(callback, args):
+    search = input("Quieres realizar una nueva busqueda o acción (si/no): ").lower()
+    if search == "si":
+        callback(args)
+    elif search == "no":
+        print("Volviendo al menu...")
+        time.sleep(1)
+        menu()
+        return
+    else:
+        print("Opción no válida, intenta nuevamente")
+        time.sleep(1)
+        research(callback, args)
+
 # Función para buscar canciones por nombre de canción o artista
 def search_songs(songs):
     search_text = input("Introduce el nombre de la canción o artista: ").lower()
     matching_songs = [song for song in songs if search_text in song.track.lower() or search_text in song.artist.lower()]
-    if not matching_songs:
+    if not matching_songs or search_text.strip() == "":
         print("No se encontraron canciones que coincidan con tu búsqueda")
+        time.sleep(1)
+        search_songs(songs)
         return
-    matching_songs.sort(key=lambda song: int(float(song.views)), reverse=True)
+    #Ordena las canciones de manera descendente por número de reproducciones
+    matching_songs.sort(key=lambda song: int(float(song.views)) if song.views.strip() else 0, reverse=True)
 
     results = [(song.artist, song.track, ms_to_time(int(float(song.duration_ms)))) for song in matching_songs]
     for artist, track, duration in results:
         print(f"Artista: {artist}, Canción: {track}, Duración: {duration}")
+    
+    research(search_songs, songs)
 
 # Función para buscar las diez canciones más populares de un artista
 def top_songs_by_artist(songs):
     artist = input("Introduce el nombre del artista: ").lower()
     artist_songs = [song for song in songs if song.artist.lower() == artist.lower()]
-    if not artist_songs:
+    if not artist_songs or artist.strip() == "":
         print("No se encontraron canciones de ese artista")
+        time.sleep(1)
+        top_songs_by_artist(songs)
         return
-    top_songs = sorted(artist_songs, key=lambda song: int(float(song.views)), reverse=True)[:10]
+    top_songs = sorted(artist_songs, key=lambda song: int(float(song.views)) if song.views.strip() else 0, reverse=True)[:10]
 
     for song in top_songs:
         artist = song.artist
@@ -81,266 +104,271 @@ def top_songs_by_artist(songs):
         views = round(int(float(song.views)) / 1000000)
         print(f"Artista: {artist}, Canción: {track}, Duración: {duration}, Reproducciones: {views} millones")
 
-# Llamar a la función con el artista deseado
-top_songs_by_artist(parse_csv())
-    
-# def searchMovie_name():
-#     name = input("Introduce el nombre de la plataforma o inicial de la misma: ")
-#     movies = parse_csv()
-#     name = name.lower()
-#     count = 1
-    
-#     def research():
-#         search = input("Quieres realizar una nueva busqueda (si/no): ").lower()
-#         if search == "si":
-#             searchMovie_name()
-#         elif search == "no":
-#             print("Volviendo al menu...")
-#             time.sleep(1)
-#             menu()
+    research(top_songs_by_artist, songs)
+
+# def is_valid_spotify_uri(uri):
+#     # Verificar que la URI sigue el formato de una URI de Spotify
+#     return re.match(r'spotify:[a-zA-Z0-9]+:[a-zA-Z0-9]+', uri) is not None
+
+# def is_valid_spotify_url(url):
+#     # Verificar que la URL sigue el formato de una URL de Spotify
+#     return re.match(r'https://open\.spotify\.com/[a-zA-Z0-9]+/[a-zA-Z0-9]+', url) is not None
+
+# def insert_manual_record(songs):
+#     new_song = []
+#     artist = input("Artista: ")
+#     new_song.append(artist)
+#     track = input("Canción: ")
+#     new_song.append(track)
+#     album = input("Álbum: ")
+#     new_song.append(album)
+
+#     # Validar duración en milisegundos
+#     while True:
+#         try:
+#             duration_ms = int(input("Duración en milisegundos: "))
+#             new_song.append(duration_ms)
+#             break
+#         except ValueError:
+#             print("La duración debe ser un número entero. Inténtalo de nuevo.")
+
+#     views = int(input("Vistas: "))
+#     new_song.append(views)
+
+#     # Validar likes
+#     while True:
+#         try:
+#             likes = int(input("Likes: "))
+#             if likes > views:
+#                 print("Los likes no pueden ser mayores que las vistas. Inténtalo de nuevo.")
+#             else:
+#                 new_song.append(likes)
+#                 break
+#         except ValueError:
+#             print("Los likes deben ser un número entero. Inténtalo de nuevo.")
+
+#     # Validar URI de Spotify
+#     while True:
+#         uri = input("URI de Spotify: ")
+#         if is_valid_spotify_uri(uri):
+#             new_song.append(uri)
+#             break
 #         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             research()
-            
-#     for movie in movies:
-#         if movie.title.lower().startswith(name):
-#             print(f"{count}. {movie.title}")
-#             count += 1
-#     research()
+#             print("La URI de Spotify no es válida. Inténtalo de nuevo.")
+
     
-# def searchmovie_by_platform(movies):
-#     platform = input("Introduce la plataforma a buscar (Netflix, Hulu, Prime Video, Disney Plus): ").lower()
-#     matching_movies = []
-#     for movie in movies:
-#         if platform == "netflix" and movie.available_in_netflix:
-#             matching_movies.append(movie)
-#         elif platform == "hulu" and movie.available_in_hulu:
-#             matching_movies.append(movie)
-#         elif platform == "prime video" and movie.available_in_prime_video:
-#             matching_movies.append(movie)
-#         elif platform == "disney plus" and movie.available_in_disney_plus:
-#             matching_movies.append(movie)
-#     if not any([platform in ["netflix", "hulu", "prime video", "disney plus"]]):
-#         print("Platarforma no encontrada, intenta nuevamente con una de las opciones válidas (Netflix, Hulu, Prime Video, Disney Plus)")
-#         time.sleep(1)
-#         searchmovie_by_platform(movies)
-#         return
-    
-#     def get_movie_rating(movie):
-#         if '/' in movie.rating:
-#             rating = movie.rating.split('/')[0]
-#             return int(rating)
+#     # Validar URL de Spotify
+#     while True:
+#         url_spotify = input("URL de Spotify: ")
+#         if is_valid_spotify_url(url_spotify):
+#             new_song.append(url_spotify)
+#             break
 #         else:
-#             return 0
+#             print("La URL de Spotify no es válida. Inténtalo de nuevo.")
+
+#     with open('music.csv', 'a', newline='', encoding='utf-8') as musics:
+#         music_csv = csv.writer(musics)
+#         music_csv.writerow(new_song)
+#     print("Canción añadida con éxito.")
 
 
-#     matching_movies.sort(key=get_movie_rating, reverse=True)
-#     for movie in matching_movies[:10]:
-#         print(f"{movie.title} está disponible en {platform.capitalize()} con una puntuación de {movie.rating}")
-    
-#     def research():
-#         search = input("Quieres realizar una nueva busqueda (si/no): ").lower()
-#         if search == "si":
-#             searchmovie_by_platform(movies)
-#         elif search == "no":
-#             print("Volviendo al menu...")
-#             time.sleep(1)
-#             menu()
-#             return
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             research()
-    
-#     research()
-    
-# def searchmovie_by_age(movies):
-#     age = input("Introduce la edad que quieres buscar (+7, +13, +16, +18, all): ").lower()
-#     matching_movies = []
-#     for movie in movies:
-#         if age == "all" and movie.age == "all":
-#             matching_movies.append(movie)
-#         elif age in ["+7", "7+", "7"] and movie.age in ["+7", "7+"]:
-#             matching_movies.append(movie)
-#         elif age in ["+13", "13+", "13"] and movie.age in ["+13", "13+"]:
-#             matching_movies.append(movie)
-#         elif age in ["+16", "16+", "16"] and movie.age in ["+16", "16+"]:
-#             matching_movies.append(movie)
-#         elif age in ["+18", "18+", "18"] and movie.age in ["+18", "18+"]:
-#             matching_movies.append(movie)
-#     if not any([age in ["+7", "7+", "7", "+13", "13+", "13", "+16", "16+", "16", "+18", "18+", "18", "all"]]):
-#         print("Edad no encontrada, intenta nuevamente con una de las opciones válidas (+7, +13, +16, +18, all)")
-#         time.sleep(1)
-#         searchmovie_by_age(movies)
-#         return
-#     def get_movie_rating(movie):
-#         return movie.rating
-    
-#     matching_movies.sort(key=get_movie_rating, reverse=True)
-#     for movie in matching_movies[:10]:
-#         print(f"{movie.title} está disponible con una puntuación de {movie.rating}")
-    
-#     def research():
-#         search = input("Quieres realizar una nueva busqueda (si/no): ").lower()
-#         if search == "si":
-#             searchmovie_by_age(movies)
-#         elif search == "no":
-#             print("Volviendo al menu...")
-#             time.sleep(1)
-#             menu()
-#             return
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             research()
-    
-#     research()
+# Funciones de validación
+def is_valid_spotify_uri(uri):
+    pattern = r'spotify:track:[a-zA-Z0-9]{22}'
+    return re.match(pattern, uri) is not None
 
-# def add_movie(movies):
-#     new_movie = []
-#     new_movie.append(input("Ingrese el título de la película: "))
+def is_valid_spotify_url(url):
+    pattern = r'https://open\.spotify\.com/track/[a-zA-Z0-9]{22}'
+    return re.match(pattern, url) is not None
 
-#     def add_year():
-#         year = input("Ingrese el año de la pelicula: ")
-#         if not year.isdigit() or len(year) != 4:
-#             print("Error: El año debe ser un número de cuatro dígitos..")
-#             time.sleep(1)
-#             add_year()
-#         current_year = datetime.datetime.now().year
-#         if not 1900 <= int(year) <= current_year:
-#             print("Error: Año no válido. Por favor ingrese un año entre 1900 y el año actual.")
-#             time.sleep(1)
-#             add_year()
-#         new_movie.append(year)
+def is_valid_youtube_url(url):
+    pattern = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.+'
+    return re.match(pattern, url) is not None
+
+# Función para insertar un registro manualmente
+def insert_manual_record(songs):
+    new_song = []
+
+    # Obtener el último índice del archivo CSV
+    try:
+        songs_df = pd.read_csv('music.csv')
+        last_index = songs_df['Index'].max() + 1
+    except (FileNotFoundError, pd.errors.EmptyDataError, KeyError):
+        last_index = 0
     
-#     add_year()
+    new_song.append(last_index)
+
+    artist = input("Artista: ")
+    new_song.append(artist)
     
-#     def add_age_rating():
-#         age_rating = input("Ingrese la clasificación por edad (+7, +13, +16, +18, or all): ")
-#         if age_rating not in ['+7', '+13', '+16', '+18', '7+', '13+', '16+', '18+', 'all']:
-#             print("Error: Clasificación de edad no válida. Ingrese +7, +13, +16, +18 o all")
-#             time.sleep(1)
-#             add_age_rating()
-#         new_movie.append(age_rating)
+    # Validar URL de Spotify
+    while True:
+        url_spotify = input("URL de Spotify: ")
+        if is_valid_spotify_url(url_spotify):
+            new_song.append(url_spotify)
+            break
+        else:
+            print("La URL de Spotify no es válida. Inténtalo de nuevo.")
 
-#     add_age_rating()
-
-#     def add_rating():
-#         rating = input("Ingrese el rating de la película (de 1 a 100): ")
-#         if rating.isdigit() and 1 <= int(rating) <= 100:
-#             new_movie.append(f"{rating}/100")
-#         else:
-#             print("Error: El rating debe ser un número entero entre 1 y 100.")
-#             time.sleep(1)
-#             add_rating()
-
-#     add_rating()
-            
-#     def add_netflix():
-#         netflix = input("¿Disponible en Netflix? (si/no): ")
-#         if netflix.lower() == "si":
-#             new_movie.append("1")
-#         elif netflix.lower() == "no":
-#             new_movie.append("0")
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             add_netflix()
+    track = input("Canción: ")
+    new_song.append(track)
     
-#     add_netflix()
-            
-#     def add_hulu():
-#         hulu = input("¿Disponible en Hulu? (si/no): ")
-#         if hulu.lower() == "si":
-#             new_movie.append("1")
-#         elif hulu.lower() == "no":
-#             new_movie.append("0")
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             add_hulu()
+    album = input("Álbum: ")
+    new_song.append(album)
+
+    album_type = input("Tipo de álbum (album/single): ")
+    new_song.append(album_type)
+
+    # Validar URI de Spotify
+    while True:
+        uri = input("URI de Spotify: ")
+        if is_valid_spotify_uri(uri):
+            new_song.append(uri)
+            break
+        else:
+            print("La URI de Spotify no es válida. Inténtalo de nuevo.")
+
+    # Danceability
+    new_song.append(0)
     
-#     add_hulu()
-            
-#     def add_prime_video():
-#         prime_video = input("¿Disponible en Prime Video? (si/no): ")
-#         if prime_video.lower() == "si":
-#             new_movie.append("1")
-#         elif prime_video.lower() == "no":
-#             new_movie.append("0")
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             add_prime_video()
+    # Energy
+    new_song.append(0)
     
-#     add_prime_video()
-            
-#     def add_disney():
-#         disney = input("¿Disponible en Disney+? (si/no): ")
-#         if disney.lower() == "si":
-#             new_movie.append("1")
-#         elif disney.lower() == "no":
-#             new_movie.append("0")
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             add_disney()
+    # Key
+    new_song.append(0)
     
-#     add_disney()
-
-#     new_movie[1] = int(new_movie[1])
-
-#     with open('movies.csv', 'a', newline='', encoding='utf-8') as movies:
-#         movies_csv = csv.writer(movies)
-#         movies_csv.writerow(new_movie)
-
-#     print("La película se ha insertado correctamente.")
-#     time.sleep(1)
+    # Loudness
+    new_song.append(0)
     
-#     def research():
-#         search = input("¿Quieres agregar otra pelicula? (si/no): ").lower()
-#         if search == "si":
-#             searchmovie_by_age(movies)
-#         elif search == "no":
-#             print("Volviendo al menu...")
-#             time.sleep(1)
-#             menu()
-#             return
-#         else:
-#             print("Opción no válida, intenta nuevamente")
-#             time.sleep(1)
-#             research()
+    # Speechiness
+    new_song.append(0)
+    
+    # Acousticness
+    new_song.append(0)
+    
+    # Instrumentalness
+    new_song.append(0)
+    
+    # Liveness
+    new_song.append(0)
+    
+    # Valence
+    new_song.append(0)
+    
+    # Tempo
+    new_song.append(0)
 
-#     research()
+    # Validar duración en milisegundos
+    while True:
+        try:
+            duration_ms = int(input("Duración en milisegundos: "))
+            new_song.append(duration_ms)
+            break
+        except ValueError:
+            print("La duración debe ser un número entero. Inténtalo de nuevo.")
 
-# def menu():
-#     movies = parse_csv()
-#     print("Bienvenido al buscador de películas")
-#     print("1. Buscar película por nombre")
-#     print("2. Buscar película por plataforma")
-#     print("3. Buscar película por audiencia")
-#     print("4. Insertar pelicula")
-#     print("5. Salir")
-#     option = input("Introduce el número de la opción que deseas: ")
-#     if option == "1":
-#         searchMovie_name()
-#     elif option == "2":
-#         searchmovie_by_platform(movies)
-#     elif option == "3":
-#         searchmovie_by_age(movies)  
-#     elif option == "4":
-#         add_movie(movies)
-#     elif option == "5":
-#         print("Saliendo...")
-#         time.sleep(1)
-#         return
-#     else:
-#         print("Opción no válida, intenta nuevamente")
-#         time.sleep(1)
-#         menu()
+    # Validar URL de YouTube
+    while True:
+        url_youtube = input("URL de YouTube: ")
+        if is_valid_youtube_url(url_youtube):
+            new_song.append(url_youtube)
+            break
+        else:
+            print("La URL de YouTube no es válida. Inténtalo de nuevo.")
 
-# if __name__ == '__main__':
-#     # Obtenemos lista de películas como una lista de DTOs
-#     movies = parse_csv()
-#     menu()
+    # Title
+    new_song.append(track)
+    
+    # Channel
+    new_song.append(artist)
+
+    # Validar vistas y likes
+    views = int(input("Vistas: "))
+    new_song.append(views)
+
+    while True:
+        try:
+            likes = int(input("Likes: "))
+            if likes > views:
+                print("Los likes no pueden ser mayores que las vistas. Inténtalo de nuevo.")
+            else:
+                new_song.append(likes)
+                break
+        except ValueError:
+            print("Los likes deben ser un número entero. Inténtalo de nuevo.")
+    
+
+    # Comentarios
+    new_song.append(23542)
+
+    # Licence
+    new_song.append(True)
+
+    # Official Video
+    new_song.append(True)
+
+    # Stream
+    new_song.append(0)
+
+    with open('music.csv', 'a', newline='', encoding='utf-8') as musics:
+        music_csv = csv.writer(musics)
+        if last_index == 0:
+            # Escribir encabezados si el archivo está vacío o es nuevo
+            headers = ["Index", "Artist", "Url_spotify", "Track", "Album", "Album_type", "Uri", "Danceability", "Energy", "Key", "Loudness", "Speechiness", "Acousticness", "Instrumentalness", "Liveness", "Valence", "Tempo", "Duration_ms", "Url_youtube", "Title", "Channel", "Views", "Likes", "Comments", "Licensed", "official_video", "Stream"]
+            music_csv.writerow(headers)
+        music_csv.writerow(new_song)
+    print("Canción añadida con éxito.")
+
+# Función para mostrar la cantidad de álbumes de un artista y detalles por álbum
+def artist_albums_info(songs):
+    artist = input("Introduce el nombre del artista: ").lower()
+    artist_songs = [song for song in songs if song.artist.lower() == artist.lower()]
+    if not artist_songs:
+        print("No se encontraron canciones de ese artista")
+        return
+
+    albums = {}
+    for song in artist_songs:
+        if song.album not in albums:
+            albums[song.album] = {'count': 0, 'duration': 0}
+        albums[song.album]['count'] += 1
+        albums[song.album]['duration'] += int(float(song.duration_ms))
+
+    print(f"Artista: {artist.capitalize()}, Álbumes: {len(albums)}")
+    for album, info in albums.items():
+        duration = ms_to_time(info['duration'])
+        print(f"Álbum: {album}, Canciones: {info['count']}, Duración total: {duration}")
+
+# Menú principal
+def menu():
+    songs = parse_csv()
+    print("Bienvenido al buscador de canciones🎶")
+    print("1. Buscar canciones por titulo o artista")
+    print("2. Buscar canciones más populares de un artista")
+    print("3. Insertar canciones")
+    print("4. Buscar albumes y sus canciones por artista")
+    print("5. Salir")
+    option = input("Introduce el número de la opción que deseas: ")
+    if option == "1":
+        search_songs(songs)
+    elif option == "2":
+        top_songs_by_artist(songs)
+    elif option == "3":
+        insert_manual_record(songs)
+    elif option == "4":
+        artist_albums_info(songs)
+    elif option == "5":
+        print("Saliendo...")
+        time.sleep(1)
+        return
+    else:
+        print("Opción no válida, intenta nuevamente")
+        time.sleep(1)
+        menu()
+
+if __name__ == '__main__':
+    # Obtenemos lista de películas como una lista de DTOs
+    songs = parse_csv()
+    menu()
+
+    
